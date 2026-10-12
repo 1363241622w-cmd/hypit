@@ -75,9 +75,7 @@ export function materializeHtmlDocument(document: HtmlDocument, resolve: Resourc
   assertHtmlDocument(document);
   const program = boundProgram(document), audio = document.audio;
   const materials = new Map(document.bindings.map(binding => [binding.id, binding.artifact]));
-  let html = renderDocumentProgram(program, audio, artifact => resolve(materials.get(artifact.resource) ?? artifact)).preview;
-  const scripts: string[] = [];
-  html = html.replace(/<script>([\s\S]*?)<\/script>/g, (_, source: string) => { scripts.push(source); return ""; });
+  const html = renderDocumentProgram(program, audio, artifact => resolve(materials.get(artifact.resource) ?? artifact)).preview;
   const settings = JSON.stringify({ autoplay: options.autoplay ?? true, loop: options.loop ?? true, muted: options.muted ?? true, responsive: options.responsive ?? true });
   const driver = `<script>
 (() => {
@@ -141,7 +139,6 @@ export function materializeHtmlDocument(document: HtmlDocument, resolve: Resourc
     try {
       await document.fonts.ready;
       await new Promise(requestAnimationFrame);
-      ${scripts.join("\n")}
       await window.__hypitFrameProgram.prepare();
       await window.__hypitFrameReady;
       await window.__hypitSetMuted(options.muted);
