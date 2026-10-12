@@ -5,7 +5,7 @@ import type { RuntimeWorkerLaunch } from "./host-api.js";
 import { createRuntimeResultWriter, localExecutionContext, readRuntimeWorkerOptions, statePath } from "./config.js";
 
 type Carrier = { readonly child: ChildProcess; readonly builds: Set<string>; readonly ready: Promise<void>;
-  done: Promise<void>; exited: boolean; stopping: boolean; completed: number; rssBytes: number; idleSince: number };
+  done: Promise<void>; exited: boolean; stopping: boolean; completed: number; rssBytes: number };
 
 /** Owns execution-carrier lifetimes, not project implementations. */
 export async function superviseBuilds(options: {
@@ -17,7 +17,7 @@ export async function superviseBuilds(options: {
   readonly signal: AbortSignal;
   readonly ready: () => Promise<void>;
 }): Promise<void> {
-  const { executionMemoryMb, executionIdleMs = 0 } = await readRuntimeWorkerOptions(options.profile);
+  const { executionMemoryMb } = await readRuntimeWorkerOptions(options.profile);
   const memoryBudget = executionMemoryMb * 1024 * 1024;
   const state = new SqliteRuntimeState(statePath(options.dataRoot));
   const carriers = new Set<Carrier>();
@@ -58,7 +58,7 @@ export async function superviseBuilds(options: {
     let rejectReady!: (error: Error) => void;
     let reports = Promise.resolve();
     const carrier: Carrier = { child, builds: new Set(), ready: new Promise((resolve, reject) => { ready = resolve; rejectReady = reject; }),
-      done: Promise.resolve(), exited: false, stopping: false, completed: 0, rssBytes: 0, idleSince: Date.now() };
+      done: Promise.resolve(), exited: false, stopping: false, completed: 0, rssBytes: 0 };
     child.on("message", (message: unknown) => {
       if (typeof message !== "object" || message === null || !("kind" in message)) return;
       if (message.kind === "executor-ready") ready();
@@ -73,7 +73,6 @@ export async function superviseBuilds(options: {
           if (!carrier.builds.has(build)) throw new Error(`Unassigned Build ${build} reported completion`);
           if ("error" in message && typeof message.error === "string") await finishInterrupted(build, message.error);
           carrier.builds.delete(build);
-          if (carrier.builds.size === 0) carrier.idleSince = Date.now();
           carrier.completed++;
           considerRetirement(carrier);
         });
@@ -113,7 +112,6 @@ export async function superviseBuilds(options: {
     while (!options.signal.aborted) {
       for (const carrier of carriers) {
         if (carrier.builds.size !== 0 || carrier.stopping || carrier.exited) continue;
-        if (accepting === carrier && Date.now() - carrier.idleSince < executionIdleMs) continue;
         carrier.stopping = true;
         if (carrier.child.connected) carrier.child.send({ kind: "stop-execution" }, () => undefined);
         if (accepting === carrier) accepting = undefined;
