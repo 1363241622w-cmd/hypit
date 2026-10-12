@@ -1,1 +1,1 @@
-export { injectRuntimeShim } from "@hypit/html-document/playback";
+export { injectRuntimeShim } from "@hypit/html-program/playback";

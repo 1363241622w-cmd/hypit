@@ -5,7 +5,7 @@ import { compileAudioProgramPlan, verifyAudioProgramPlan } from "@hypit/media-op
 import type { AudioProgramPlan } from "@hypit/media-operations";
 import type { Timeline } from "@hypit/timeline";
 import type { BlobRef } from "@hypit/hypit/protocol";
-import { injectRuntimeShim } from "./runtime-shim.js";
+import { injectRuntimeShim } from "@hypit/html-program/playback";
 
 export type HtmlDocument = {
   readonly format: "hypit.html-document@1";
@@ -54,7 +54,7 @@ export function assertHtmlDocument(value: unknown): asserts value is HtmlDocumen
 const attribute = (value: string) => value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
 /** Materialize picture and sound using the host's URLs and shared frame playback. */
-export function renderHtmlDocumentProgram(program: HtmlProgram, audio: AudioProgramPlan, resolve: ResourceUrlResolver): { html: string; preview: string } {
+function renderDocumentProgram(program: HtmlProgram, audio: AudioProgramPlan, resolve: ResourceUrlResolver): { html: string; preview: string } {
   assertHtmlProgram(program);
   verifyAudioProgramPlan(audio);
   const html = materializeHtmlProgram(program, resolve);
@@ -75,7 +75,7 @@ export function materializeHtmlDocument(document: HtmlDocument, resolve: Resourc
   assertHtmlDocument(document);
   const program = boundProgram(document), audio = document.audio;
   const materials = new Map(document.bindings.map(binding => [binding.id, binding.artifact]));
-  let html = renderHtmlDocumentProgram(program, audio, artifact => resolve(materials.get(artifact.resource) ?? artifact)).preview;
+  let html = renderDocumentProgram(program, audio, artifact => resolve(materials.get(artifact.resource) ?? artifact)).preview;
   const scripts: string[] = [];
   html = html.replace(/<script>([\s\S]*?)<\/script>/g, (_, source: string) => { scripts.push(source); return ""; });
   const settings = JSON.stringify({ autoplay: options.autoplay ?? true, loop: options.loop ?? true, muted: options.muted ?? true, responsive: options.responsive ?? true });

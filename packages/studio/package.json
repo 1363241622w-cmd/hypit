@@ -18,7 +18,6 @@
   ],
   "dependencies": {
     "@hypit/composition": "workspace:^0.1.0",
-    "@hypit/html-document": "workspace:^0.1.0",
     "@hypit/html-program": "workspace:^0.1.0",
     "@hypit/media-local": "workspace:^0.2.0",
     "@hypit/media-operations": "workspace:^0.2.0",

@@ -5,8 +5,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./playback": "./src/runtime-shim.ts"
+    ".": "./src/index.ts"
   },
   "files": ["dist", "src", "README.md"],
   "hypit": { "activation": "./src/activation.ts" },

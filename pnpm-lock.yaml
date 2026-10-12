@@ -2483,9 +2483,6 @@ importers:
       '@hypit/composition':
         specifier: workspace:^0.1.0
         version: link:../composition
-      '@hypit/html-document':
-        specifier: workspace:^0.1.0
-        version: link:../html-document
       '@hypit/html-program':
         specifier: workspace:^0.1.0
         version: link:../html-program
