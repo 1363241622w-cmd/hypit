@@ -71,7 +71,7 @@ export type LocalRuntimeProfile = {
   readonly format: "hypit.runtime-local@1";
   readonly dataRoot: string;
   /** Coordinator policy, independent of any Build's selected Endpoints. */
-  readonly worker?: { readonly executionMemoryMb: number };
+  readonly worker?: { readonly executionMemoryMb: number; readonly executionIdleMs?: number };
   readonly credentials: readonly LocalRuntimeAdapterSelection[];
   readonly endpoints: readonly LocalRuntimeAdapterSelection[];
   /**
@@ -217,12 +217,16 @@ export function parseLocalRuntimeProfile(value: unknown): LocalRuntimeProfile {
   let worker: LocalRuntimeProfile["worker"];
   if (item.worker !== undefined) {
     const settings = object(item.worker, "$runtime.worker");
-    exactKeys(settings, ["executionMemoryMb"], "$runtime.worker");
+    exactKeys(settings, ["executionMemoryMb", "executionIdleMs"], "$runtime.worker");
     const budget = settings.executionMemoryMb;
     if (typeof budget !== "number" || !Number.isSafeInteger(budget) || budget <= 0) {
       throw new Error("$runtime.worker.executionMemoryMb must be a positive integer in MiB");
     }
-    worker = { executionMemoryMb: budget };
+    const idle = settings.executionIdleMs;
+    if (idle !== undefined && (typeof idle !== "number" || !Number.isSafeInteger(idle) || idle < 0 || idle > 3_600_000)) {
+      throw new Error("$runtime.worker.executionIdleMs must be an integer between 0 and 3600000");
+    }
+    worker = { executionMemoryMb: budget, ...(idle === undefined ? {} : { executionIdleMs: idle as number }) };
   }
   return {
     format: "hypit.runtime-local@1",
@@ -235,7 +239,7 @@ export function parseLocalRuntimeProfile(value: unknown): LocalRuntimeProfile {
 }
 
 /** Read only process policy; starting a coordinator does not load selected project packages. */
-export async function readRuntimeWorkerOptions(path: string): Promise<{ readonly executionMemoryMb: number }> {
+export async function readRuntimeWorkerOptions(path: string): Promise<{ readonly executionMemoryMb: number; readonly executionIdleMs?: number }> {
   return (await openRuntimeConfig(path)).document.worker ?? { executionMemoryMb: 1024 };
 }
 

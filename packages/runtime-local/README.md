@@ -209,16 +209,20 @@ not OS or security isolation: process globals, native libraries and a fatal proc
 The carrier has one working directory and inherited environment. Package-relative file access uses
 module URLs; spawned tools receive their own explicit working directory and environment as needed.
 
-After its assigned Builds end, the carrier exits and releases Node's module cache. The coordinator and
-Managed Programs stay available. With continuous submissions, the coordinator can retire a carrier
+After its assigned Builds end, the carrier stays available for the configured idle interval, then
+exits and releases Node's module cache. The coordinator and Managed Programs stay available.
+With continuous submissions, the coordinator can retire a carrier
 from accepting new Builds while its assigned work continues in place. New work uses a fresh carrier;
 all carriers share the same SQLite resource accounting. A live Build is never unloaded or moved.
 
 The coordinator reads process policy from its startup Profile:
 
 ```json
-"worker": { "executionMemoryMb": 1024 }
+"worker": { "executionMemoryMb": 1024, "executionIdleMs": 300000 }
 ```
+
+`executionIdleMs` defaults to zero and accepts up to one hour. Setting it to 300000 reuses an idle
+carrier for five minutes. Memory retirement and coordinator shutdown still stop idle carriers.
 
 The default is 1024 MiB of execution-process RSS. It is a soft retirement budget, not a memory ceiling
 or a limit on active Builds. Carriers report RSS after opening a Build context and when a Build ends.
